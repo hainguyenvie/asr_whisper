@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Cache
+.cache/
+*.cache
+
+# Test & experiment scripts
+test.py
+test_*.py
+compare_*.py
+benchmark_*.py
+llm_correct*.py
+run_dfnet.py
+run_whisperx.py
+run_golden_whisper.py
+run_inference_test.py
+save.py
+ws.py
+convert_phowhisper.py
+setup_phowhisper.sh
+audio_tests/
+
+# Models (too large, copy manually to server)
+models/
+
+# Audio files
+*.m4a
+*.mp3
+*.webm
+*.ogg
+
+# Wav (except explicitly needed)
+*.wav
+
+# Result / debug json
+*.json
+!package.json
+
+# Viettel internal cert
+swg_ca.crt
+
+# Text results (keep requirements)
+*.txt
+!requirements-serving.txt
+!requirements-standalone.txt

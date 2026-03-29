@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  speech-to-text:
+    container_name: moonshine_stt_server
+    build: .
+    ports:
+      - "9120:9120"
+    volumes:
+      - ./models:/app/models
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              device_ids: ["1"]
+              capabilities: [gpu]
