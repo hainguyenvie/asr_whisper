@@ -264,6 +264,43 @@ def get_vad_chunks(audio: np.ndarray, duration: float) -> tuple[list, list]:
 # Pyannote diarization
 # ==============================================================================
 
+def _patch_pyannote_config(config_path: str) -> str:
+    """
+    Đọc config.yaml và thay thế bất kỳ đường dẫn tuyệt đối nào của segmentation/embedding
+    bằng đường dẫn tương đối cạnh config.yaml. Ghi ra file tạm, trả về path đó.
+    """
+    import tempfile, re
+
+    models_dir = os.path.join(SERVING_DIR, "models", "pyannote")
+
+    with open(config_path, "r") as f:
+        content = f.read()
+
+    # Thay thế bất kỳ path tuyệt đối nào kết thúc bằng pytorch_model.bin
+    def replace_path(m):
+        original = m.group(0)
+        # Lấy tên thư mục model (segmentation-3.0 / wespeaker-...)
+        parts = original.replace("\\", "/").split("/")
+        # Tìm 2 phần cuối: <model_dir>/pytorch_model.bin
+        if len(parts) >= 2:
+            model_subdir = parts[-2]
+            filename     = parts[-1]
+            new_path = os.path.join(models_dir, model_subdir, filename)
+            if os.path.exists(new_path):
+                return new_path
+        return original
+
+    patched = re.sub(r"[^\s:]+pytorch_model\.bin", replace_path, content)
+
+    # Ghi ra file tạm
+    tmp = tempfile.NamedTemporaryFile(
+        mode="w", suffix=".yaml", delete=False, dir=os.path.dirname(config_path)
+    )
+    tmp.write(patched)
+    tmp.close()
+    return tmp.name
+
+
 def run_diarization(audio: np.ndarray) -> list[tuple[float, float, str]]:
     """
     Chạy Pyannote 3.1 → list[(start, end, speaker_label)].
@@ -274,8 +311,14 @@ def run_diarization(audio: np.ndarray) -> list[tuple[float, float, str]]:
     config_path = os.path.join(
         SERVING_DIR, "models", "pyannote", "speaker-diarization-3.1", "config.yaml"
     )
-    print("🔍 Đang load Pyannote 3.1 Pipeline...")
-    pipeline = Pipeline.from_pretrained(config_path)
+    # Patch paths (config.yaml có thể chứa absolute path từ máy khác)
+    patched_config = _patch_pyannote_config(config_path)
+    print(f"🔍 Đang load Pyannote 3.1 Pipeline (config: {patched_config})...")
+    try:
+        pipeline = Pipeline.from_pretrained(patched_config)
+    finally:
+        if patched_config != config_path and os.path.exists(patched_config):
+            os.unlink(patched_config)
     if torch.cuda.is_available():
         pipeline.to(torch.device("cuda"))
         if hasattr(pipeline, "segmentation_batch_size"):
